@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Git Diff Demo</title>
+
+<script src="index.js"></script>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    font-family:Consolas,"Microsoft YaHei";
+}
+
+body{
+    margin:0;
+    background:#f5f5f5;
+}
+
+header{
+
+    background:#24292e;
+    color:white;
+    padding:15px 20px;
+    font-size:22px;
+}
+
+.toolbar{
+
+    display:flex;
+    gap:10px;
+    padding:15px;
+}
+
+textarea{
+
+    width:50%;
+    height:220px;
+    resize:none;
+    padding:15px;
+    border:1px solid #ccc;
+    font-size:15px;
+    line-height:1.7;
+}
+
+button{
+
+    width:180px;
+    height:42px;
+    border:none;
+    background:#2da44e;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    border-radius:6px;
+}
+
+button:hover{
+
+    background:#238636;
+}
+
+#diff{
+
+    display:flex;
+    gap:0;
+    margin:15px;
+    border:1px solid #ddd;
+    background:white;
+}
+
+.panel{
+
+    width:50%;
+    border-right:1px solid #ddd;
+}
+
+.panel:last-child{
+
+    border-right:none;
+}
+
+.title{
+
+    background:#fafbfc;
+    padding:10px;
+    font-weight:bold;
+    border-bottom:1px solid #ddd;
+}
+
+.line{
+
+    display:flex;
+    border-bottom:1px solid #f1f1f1;
+    min-height:28px;
+}
+
+.num{
+
+    width:50px;
+    background:#fafafa;
+    color:#999;
+    text-align:right;
+    padding-right:10px;
+    user-select:none;
+    border-right:1px solid #eee;
+}
+
+.code{
+
+    flex:1;
+    padding:3px 10px;
+    white-space:pre-wrap;
+    word-break:break-all;
+}
+
+.add{
+    background:#e6ffec;
+}
+
+.del{
+    background:#ffeef0;
+}
+
+ins{
+
+    background:#acf2bd;
+    text-decoration:none;
+}
+
+del{
+
+    background:#ffb3b8;
+    text-decoration:line-through;
+}
+
+.same{
+
+    background:white;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+Git Style Text Compare Demo
+
+</header>
+
+<div class="toolbar">
+
+<textarea id="old">
+今天我们去北京旅游
+天气很好
+吃了烤鸭
+然后去了故宫
+晚上回酒店
+</textarea>
+
+<textarea id="new">
+今天我们去上海旅游
+天气非常好
+吃了小笼包
+然后去了外滩
+晚上回酒店了
+</textarea>
+
+<button onclick="compare()">
+Compare
+</button>
+
+</div>
+
+<div id="diff">
+
+<div class="panel">
+
+<div class="title">
+旧版本
+</div>
+
+<div id="left"></div>
+
+</div>
+
+<div class="panel">
+
+<div class="title">
+新版本
+</div>
+
+<div id="right"></div>
+
+</div>
+
+</div>
+
+<script>
+
+function escapeHtml(str){
+
+    return str
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;");
+}
+
+function buildDiff(oldText,newText){
+
+    const dmp=new diff_match_patch();
+
+    let diffs=dmp.diff_main(oldText,newText);
+
+    dmp.diff_cleanupSemantic(diffs);
+
+    return diffs;
+
+}
+
+function compare(){
+
+    let oldText=document.getElementById("old").value;
+
+    let newText=document.getElementById("new").value;
+
+    let diff=buildDiff(oldText,newText);
+
+    let leftHTML="";
+    let rightHTML="";
+
+    let leftLine=1;
+    let rightLine=1;
+
+    let leftBuffer="";
+    let rightBuffer="";
+
+    function pushLine(){
+
+        leftHTML+=`
+        <div class="line">
+        <div class="num">${leftLine++}</div>
+        <div class="code">${leftBuffer}</div>
+        </div>`;
+
+        rightHTML+=`
+        <div class="line">
+        <div class="num">${rightLine++}</div>
+        <div class="code">${rightBuffer}</div>
+        </div>`;
+
+        leftBuffer="";
+        rightBuffer="";
+    }
+
+    diff.forEach(item=>{
+
+        let type=item[0];
+
+        let text=escapeHtml(item[1]);
+
+        let arr=text.split("\n");
+
+        arr.forEach((part,index)=>{
+
+            if(type==0){
+
+                leftBuffer+=part;
+                rightBuffer+=part;
+
+            }
+
+            if(type==-1){
+
+                leftBuffer+=`<del>${part}</del>`;
+
+            }
+
+            if(type==1){
+
+                rightBuffer+=`<ins>${part}</ins>`;
+
+            }
+
+            if(index!=arr.length-1){
+
+                pushLine();
+
+            }
+
+        });
+
+    });
+
+    pushLine();
+
+    document.getElementById("left").innerHTML=leftHTML;
+
+    document.getElementById("right").innerHTML=rightHTML;
+
+}
+
+compare();
+
+</script>
+
+</body>
+</html>
